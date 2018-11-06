@@ -1,0 +1,9 @@
+/tmp
+.classpath
+.project
+.DS_Store
+**/.DS_Store
+/bin
+/lib
+.cache
+.idea/workspace.xml
