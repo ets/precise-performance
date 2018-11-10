@@ -1,9 +1,0 @@
-Package      Version 
------------- --------
-chardet      3.0.4   
-pdfminer.six 20170720
-pip          18.1    
-pycryptodome 3.7.0   
-setuptools   39.0.1  
-six          1.11.0  
-sofine       0.2.4.2 

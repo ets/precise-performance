@@ -1,5 +1,5 @@
 pyvenv.cfg
-/tmp
+/data
 .classpath
 .project
 .DS_Store
