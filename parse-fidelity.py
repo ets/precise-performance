@@ -36,6 +36,7 @@ for filename in glob.glob(raw_folder+'/*.csv'):
                     accountDict [statementDate] = [contribution,endingBalance]
                 else:
                     accounts [account] = {statementDate: [contribution,endingBalance]}
+    # pp.pprint(accounts)
                     
 
 for account in accounts:
