@@ -25,7 +25,8 @@ for filename in glob.glob(raw_folder+'/*.csv'):
                 headersRead = True
             elif headersRead:
                 account = row[1]
-                statementDate = datetime.strptime(filename, raw_folder+'/%y%m%d.csv').strftime("%Y-%m-%d")                
+                indexOfDate = len(raw_folder) + 7
+                statementDate = datetime.strptime(filename[:indexOfDate], raw_folder+'/%y%m%d').strftime("%Y-%m-%d")                
                 endingBalance = float(row[4])
                 marketChange = float(row[3])
                 beginningBalance = float(row[2])
@@ -43,3 +44,14 @@ for account in accounts:
     pickle.dump( accounts[account], open( processed_folder+"/"+account, "wb" ) )            
     # readData = pickle.load( open( processed_folder+"/"+account, "rb" ) )
     # pp.pprint(readData)
+    with open(processed_folder+"/"+account+'-bogle.csv', mode='w') as bogle_file:
+        bogle_writer = csv.writer(bogle_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        for stmtMonth in accounts[account].keys():            
+            withdrawal = 0
+            contribution = 0
+            if accounts[account][stmtMonth][0] > 0:
+                contribution = accounts[account][stmtMonth][0]
+            else:
+                withdrawal = abs(accounts[account][stmtMonth][0])
+            balance = accounts[account][stmtMonth][1]
+            bogle_writer.writerow([stmtMonth,balance,contribution,withdrawal])

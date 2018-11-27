@@ -47,7 +47,7 @@ if r.status_code == 200:
         print("Found "+str(len(datadivs))+" data tables for "+year)
         if (len(datadivs) > 0):
             table = datadivs[-1].find('table')
-            rows = table.find_all('tr')            
+            rows = table.find_all('tr')
             for row in rows:
                 cols = row.find_all('td')
                 links = row.find_all('a',href=True)
@@ -55,8 +55,11 @@ if r.status_code == 200:
                     parsedLink = urlparse(links[-1]['href'])
                     urlParams = parse_qs(parsedLink.query)
                     if 'download' in urlParams and urlParams['download'][0] == 'y' and len(urlParams['c']) > 0:
-                        # This is a row with a CSV download                                    
-                        csvFilename = raw_folder + datetime.strptime(urlParams['c'][0], '%m/%d/%Y').strftime("%y%m%d") + '.csv'
+                        # This is a row with a CSV download      
+                        statementDate = urlParams['c'][0]                        
+                        csvFilename = raw_folder + datetime.strptime(statementDate, '%m/%d/%Y').strftime("%y%m%d") + '.csv'
+                        if os.path.isfile(csvFilename):
+                            csvFilename = csvFilename[:-4] + '.+' + csvFilename[-4:]
                         csvResponse = s.get(fi_statements_url+links[-1]['href'])                        
                         with open(csvFilename, 'w') as f:
                             f.write(csvResponse.text)
