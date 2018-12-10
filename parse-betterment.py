@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 
 
 # pull these sensitive parameters from the environment vars
-raw_folder = './data/raw/fidelity'
-processed_folder = './data/processed/fidelity'
+raw_folder = './data/raw/betterment'
+processed_folder = './data/processed/betterment'
 accounts = {}
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -18,31 +18,27 @@ for filename in glob.glob(raw_folder+'/*.csv'):
         csvReader = csv.reader(csvFile, delimiter=',')
         headersRead = False
         for row in csvReader:
-            if headersRead and row[1] == '':
-                break
-            if (not headersRead) and len(row) >= 2 and row[1] == 'Account #':
+            if not headersRead :
                 # print(f'Column names are {", ".join(row)}')
                 headersRead = True
             elif headersRead:
-                account = row[1]
-                indexOfDate = len(raw_folder) + 7
-                statementDate = datetime.strptime(filename[:indexOfDate], raw_folder+'/%y%m%d')
-                endingBalance = float(row[4])
-                marketChange = float(row[3])
-                beginningBalance = float(row[2])
-                contribution = round(endingBalance - (beginningBalance + marketChange),3)
+                account = row[1]                
+                amount = 0
+                txnDesc = row[2].lower()
+                if "dividend" not in txnDesc:
+                    amount = row[3]
+                balance = row[4]
+                date = datetime.strptime(row[6], "%Y-%m-%d %H:%M:%S %z")         
                 
                 if account in accounts:
                     accountDict = accounts [account]
-                    accountDict [statementDate] = [contribution,endingBalance]
+                    accountDict [date] = [amount,balance]
                 else:
-                    accounts [account] = {statementDate: [contribution,endingBalance]}
+                    accounts [account] = {date: [amount,balance]}
     # pp.pprint(accounts)
                     
 
 for account in accounts:    
-    # Fidelity BS hack here...
-    # Search for months that are missing statement data and assume no transactions or balance changes 
     statementMonths = list(accounts[account].keys())
     for year in range(statementMonths[0].year, statementMonths[-1].year):
         for month in range(1, 13):
