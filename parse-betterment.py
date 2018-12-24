@@ -22,12 +22,13 @@ for filename in glob.glob(raw_folder+'/*.csv'):
                 # print(f'Column names are {", ".join(row)}')
                 headersRead = True
             elif headersRead:
+                print(f'data row {", ".join(row)}')
                 account = row[1]                
                 amount = 0
                 txnDesc = row[2].lower()
-                if "dividend" not in txnDesc:
+                if "dividend" not in txnDesc: # we're considering dividends same as equity bumps
                     amount = row[3]
-                balance = row[4]
+                balance = row[4]                
                 date = datetime.strptime(row[6], "%Y-%m-%d %H:%M:%S %z")         
                 
                 if account in accounts:
@@ -39,38 +40,50 @@ for filename in glob.glob(raw_folder+'/*.csv'):
                     
 
 for account in accounts:    
-    statementMonths = list(accounts[account].keys())
-    for year in range(statementMonths[0].year, statementMonths[-1].year):
+    monthlyLedger = {}
+    statementEntries = list(accounts[account].keys())    
+    statementEntries.sort()
+    for year in range(statementEntries[0].year, statementEntries[-1].year):
+        print( str(year))
         for month in range(1, 13):
-            matchingMonths = [x for x in statementMonths if x.year == year and x.month == month]
-            if len(matchingMonths) < 1:
+            print( str(year) + "/" + str(month))
+            matchingEntries = [x for x in statementEntries if x.year == year and x.month == month]
+            if len(matchingEntries) < 1:
                 statementDate = datetime.strptime( str(year)+'/'+str(month)+"/21", '%Y/%m/%d')
-                accountDict = accounts [account]
-                accountDict [statementDate] = [0,"Unknown"]   
+                monthlyLedger [statementDate] = [0,"Unknown"]   
                 print (statementDate)
+            else:
+                matchingEntries.sort()                
+                balance = matchingEntries[-1][1] # the second cell in the last entry is the last balance for the month
+                contribution = 0
+                for entry in matchingEntries:     
+                    contribution += entry[0]
+                statementDate = datetime.strptime( str(year)+'/'+str(month)+"/21", '%Y/%m/%d')
+                monthlyLedger [statementDate] = [contribution,balance]   
+                pp.pprint(matchingEntries)
 
-    # pull the list of keys again since I've modified the source dict    
-    statementMonths = list(accounts[account].keys())
-    statementMonths.sort()
+
+    monthlyEntries = list(monthlyLedger.keys())
+    monthlyEntries.sort()
     balance = 0
-    for stmtMonth in statementMonths:    
-        if(accounts[account][stmtMonth][1] == "Unknown"):
-            accounts[account][stmtMonth][1] = balance # set it to the previous balance
-        balance = accounts[account][stmtMonth][1]
+    for entry in monthlyEntries:    
+        if(monthlyLedger[entry][1] == "Unknown"):
+            monthlyLedger[entry][1] = balance # set it to the previous balance
+        balance = monthlyLedger[entry][1]
     
     # Store the account data
-    pickle.dump( accounts[account], open( processed_folder+"/"+account, "wb" ) )            
+    pickle.dump( monthlyLedger, open( processed_folder+"/"+account, "wb" ) )            
     # readData = pickle.load( open( processed_folder+"/"+account, "rb" ) )
     # pp.pprint(readData)
 
     with open(processed_folder+"/"+account+'-bogle.csv', mode='w') as bogle_file:
         bogle_writer = csv.writer(bogle_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        for stmtMonth in statementMonths:    
+        for stmtMonth in monthlyLedger:    
             withdrawal = 0
             contribution = 0
-            if accounts[account][stmtMonth][0] > 0:
-                contribution = accounts[account][stmtMonth][0]
+            if monthlyLedger[stmtMonth][0] > 0:
+                contribution = monthlyLedger[stmtMonth][0]
             else:
-                withdrawal = abs(accounts[account][stmtMonth][0])
-            balance = accounts[account][stmtMonth][1]
+                withdrawal = abs(monthlyLedger[stmtMonth][0])
+            balance = monthlyLedger[stmtMonth][1]
             bogle_writer.writerow([stmtMonth.strftime("%Y-%m-%d"),balance,contribution,withdrawal])
