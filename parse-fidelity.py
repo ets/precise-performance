@@ -44,14 +44,14 @@ for account in accounts:
     # Fidelity BS hack here...
     # Search for months that are missing statement data and assume no transactions or balance changes 
     statementMonths = list(accounts[account].keys())
-    for year in range(statementMonths[0].year, statementMonths[-1].year):
+    for year in range(statementMonths[0].year, statementMonths[-1].year + 1):
         for month in range(1, 13):
             matchingMonths = [x for x in statementMonths if x.year == year and x.month == month]
             if len(matchingMonths) < 1:
                 statementDate = datetime.strptime( str(year)+'/'+str(month)+"/21", '%Y/%m/%d')
                 accountDict = accounts [account]
                 accountDict [statementDate] = [0,"Unknown"]   
-                print (statementDate)
+                #print (statementDate)
 
     # pull the list of keys again since I've modified the source dict    
     statementMonths = list(accounts[account].keys())

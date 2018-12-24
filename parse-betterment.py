@@ -22,7 +22,7 @@ for filename in glob.glob(raw_folder+'/*.csv'):
                 # print(f'Column names are {", ".join(row)}')
                 headersRead = True
             elif headersRead:
-                print(f'data row {", ".join(row)}')
+                # print(f'data row {", ".join(row)}')
                 account = row[1]                
                 amount = 0
                 txnDesc = row[2].lower()
@@ -33,34 +33,34 @@ for filename in glob.glob(raw_folder+'/*.csv'):
                 
                 if account in accounts:
                     accountDict = accounts [account]
-                    accountDict [date] = [amount,balance]
+                    accountDict [date] = [float(amount),float(balance)]
                 else:
-                    accounts [account] = {date: [amount,balance]}
+                    accounts [account] = {date: [float(amount),float(balance)]}
     # pp.pprint(accounts)
                     
 
-for account in accounts:    
+for accountName in accounts:        
     monthlyLedger = {}
-    statementEntries = list(accounts[account].keys())    
-    statementEntries.sort()
-    for year in range(statementEntries[0].year, statementEntries[-1].year):
-        print( str(year))
+    account = accounts[accountName]
+    stmtEntryKeys = list(account.keys())    
+    stmtEntryKeys.sort()
+    for year in range(stmtEntryKeys[0].year, stmtEntryKeys[-1].year + 1) :
+        #print( str(year))
         for month in range(1, 13):
-            print( str(year) + "/" + str(month))
-            matchingEntries = [x for x in statementEntries if x.year == year and x.month == month]
-            if len(matchingEntries) < 1:
+            #print( str(year) + "/" + str(month))
+            matchingKeys = [x for x in stmtEntryKeys if x.year == year and x.month == month]
+            if len(matchingKeys) < 1:
                 statementDate = datetime.strptime( str(year)+'/'+str(month)+"/21", '%Y/%m/%d')
                 monthlyLedger [statementDate] = [0,"Unknown"]   
-                print (statementDate)
+                #print (statementDate)
             else:
-                matchingEntries.sort()                
-                balance = matchingEntries[-1][1] # the second cell in the last entry is the last balance for the month
+                matchingKeys.sort()                
+                balance = account[matchingKeys[-1]][1] # the second cell in the last entry is the last balance for the month
                 contribution = 0
-                for entry in matchingEntries:     
-                    contribution += entry[0]
+                for key in matchingKeys:     
+                    contribution += account[key][0]
                 statementDate = datetime.strptime( str(year)+'/'+str(month)+"/21", '%Y/%m/%d')
-                monthlyLedger [statementDate] = [contribution,balance]   
-                pp.pprint(matchingEntries)
+                monthlyLedger [statementDate] = [contribution,balance]                   
 
 
     monthlyEntries = list(monthlyLedger.keys())
@@ -72,11 +72,11 @@ for account in accounts:
         balance = monthlyLedger[entry][1]
     
     # Store the account data
-    pickle.dump( monthlyLedger, open( processed_folder+"/"+account, "wb" ) )            
-    # readData = pickle.load( open( processed_folder+"/"+account, "rb" ) )
+    pickle.dump( monthlyLedger, open( processed_folder+"/"+accountName, "wb" ) )            
+    # readData = pickle.load( open( processed_folder+"/"+accountName, "rb" ) )
     # pp.pprint(readData)
 
-    with open(processed_folder+"/"+account+'-bogle.csv', mode='w') as bogle_file:
+    with open(processed_folder+"/"+accountName+'-bogle.csv', mode='w') as bogle_file:
         bogle_writer = csv.writer(bogle_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         for stmtMonth in monthlyLedger:    
             withdrawal = 0
