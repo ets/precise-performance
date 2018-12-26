@@ -50,7 +50,7 @@ for accountName in accounts:
             #print( str(year) + "/" + str(month))
             matchingKeys = [x for x in stmtEntryKeys if x.year == year and x.month == month]
             if len(matchingKeys) < 1:
-                statementDate = datetime.strptime( str(year)+'/'+str(month)+"/21", '%Y/%m/%d')
+                statementDate = datetime.strptime( str(year)+'/'+str(month), '%Y/%m')
                 monthlyLedger [statementDate] = [0,"Unknown"]   
                 #print (statementDate)
             else:
@@ -59,7 +59,7 @@ for accountName in accounts:
                 contribution = 0
                 for key in matchingKeys:     
                     contribution += account[key][0]
-                statementDate = datetime.strptime( str(year)+'/'+str(month)+"/21", '%Y/%m/%d')
+                statementDate = datetime.strptime( str(year)+'/'+str(month), '%Y/%m')
                 monthlyLedger [statementDate] = [contribution,balance]                   
 
 
@@ -72,7 +72,7 @@ for accountName in accounts:
         balance = monthlyLedger[entry][1]
     
     # Store the account data
-    pickle.dump( monthlyLedger, open( processed_folder+"/"+accountName, "wb" ) )            
+    pickle.dump( monthlyLedger, open( processed_folder+"/"+accountName+".pickle", "wb" ) )            
     # readData = pickle.load( open( processed_folder+"/"+accountName, "rb" ) )
     # pp.pprint(readData)
 
@@ -86,4 +86,4 @@ for accountName in accounts:
             else:
                 withdrawal = abs(monthlyLedger[stmtMonth][0])
             balance = monthlyLedger[stmtMonth][1]
-            bogle_writer.writerow([stmtMonth.strftime("%Y-%m-%d"),balance,contribution,withdrawal])
+            bogle_writer.writerow([stmtMonth.strftime("%Y-%m"),balance,contribution,withdrawal])

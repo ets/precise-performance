@@ -48,7 +48,7 @@ for account in accounts:
         for month in range(1, 13):
             matchingMonths = [x for x in statementMonths if x.year == year and x.month == month]
             if len(matchingMonths) < 1:
-                statementDate = datetime.strptime( str(year)+'/'+str(month)+"/21", '%Y/%m/%d')
+                statementDate = datetime.strptime( str(year)+'/'+str(month), '%Y/%m')
                 accountDict = accounts [account]
                 accountDict [statementDate] = [0,"Unknown"]   
                 #print (statementDate)
@@ -63,7 +63,7 @@ for account in accounts:
         balance = accounts[account][stmtMonth][1]
     
     # Store the account data
-    pickle.dump( accounts[account], open( processed_folder+"/"+account, "wb" ) )            
+    pickle.dump( accounts[account], open( processed_folder+"/"+account+".pickle", "wb" ) )            
     # readData = pickle.load( open( processed_folder+"/"+account, "rb" ) )
     # pp.pprint(readData)
 
@@ -77,4 +77,4 @@ for account in accounts:
             else:
                 withdrawal = abs(accounts[account][stmtMonth][0])
             balance = accounts[account][stmtMonth][1]
-            bogle_writer.writerow([stmtMonth.strftime("%Y-%m-%d"),balance,contribution,withdrawal])
+            bogle_writer.writerow([stmtMonth.strftime("%Y-%m"),balance,contribution,withdrawal])
