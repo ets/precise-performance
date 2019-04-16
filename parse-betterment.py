@@ -1,5 +1,5 @@
-import logging, os, csv, glob, pprint, pickle
-from datetime import datetime, timedelta
+import logging, os, csv, glob, pprint
+from datetime import datetime
 
 
 # pull these sensitive parameters from the environment vars
@@ -71,11 +71,15 @@ for accountName in accounts:
             monthlyLedger[entry][1] = balance # set it to the previous balance
         balance = monthlyLedger[entry][1]
     
-    # Store the account data
-    pickle.dump( monthlyLedger, open( processed_folder+"/"+accountName+".pickle", "wb" ) )            
-    # readData = pickle.load( open( processed_folder+"/"+accountName, "rb" ) )
-    # pp.pprint(readData)
+    # Store the account data in mospire format
+    with open(processed_folder+"/"+accountName+'-mospire.csv', mode='w') as mospire_file:
+        mospire_writer = csv.writer(mospire_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        for stmtMonth in monthlyLedger:
+            contribution = monthlyLedger[stmtMonth][0]
+            balance = monthlyLedger[stmtMonth][1]
+            mospire_writer.writerow([stmtMonth.strftime("%Y-%m"),balance,contribution])
 
+    # Store the account data in bogle spreadsheet format
     with open(processed_folder+"/"+accountName+'-bogle.csv', mode='w') as bogle_file:
         bogle_writer = csv.writer(bogle_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         for stmtMonth in monthlyLedger:    

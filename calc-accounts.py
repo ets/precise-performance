@@ -1,4 +1,4 @@
-import logging, os, glob, pprint, pickle, re
+import logging, os, glob, pprint, csv, re
 from datetime import datetime, timedelta
 from dateutil.rrule import rrule, DAILY, MONTHLY
 import numpy as np
@@ -22,11 +22,17 @@ latestStatements = []
 consolidatedByMonth = {}
 
 for broker in glob.glob(processed_folder+'/*'):
-    for filename in glob.glob(broker+'/*.pickle'):
+    for filename in glob.glob(broker+'/*-mospire.csv'):
         tokens = re.split('/|\.',filename)        
         brokerName = tokens[4]        
         accountName = tokens[5]
-        readData = pickle.load( open( filename, "rb" ) )
+        readData = {}
+        with open(filename, mode='r') as mospire_file:
+            csvReader = csv.reader(mospire_file, delimiter=',')
+            for row in csvReader:
+                stmtDate = datetime.strptime(row[0], '%Y-%m')
+                readData[stmtDate] = [float(row[1]),float(row[2])]
+
         # pp.pprint(readData)
         allDates = list(readData.keys())
         allDates.sort()
