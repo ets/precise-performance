@@ -56,11 +56,11 @@ for accountName in accounts:
             else:
                 matchingKeys.sort()                
                 balance = account[matchingKeys[-1]][1] # the second cell in the last entry is the last balance for the month
-                contribution = 0
+                flow = 0
                 for key in matchingKeys:     
-                    contribution += account[key][0]
+                    flow += account[key][0]
                 statementDate = datetime.strptime( str(year)+'/'+str(month), '%Y/%m')
-                monthlyLedger [statementDate] = [contribution,balance]                   
+                monthlyLedger [statementDate] = [flow, balance]
 
 
     monthlyEntries = list(monthlyLedger.keys())
@@ -75,19 +75,19 @@ for accountName in accounts:
     with open(processed_folder+"/"+accountName+'-mospire.csv', mode='w') as mospire_file:
         mospire_writer = csv.writer(mospire_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         for stmtMonth in monthlyLedger:
-            contribution = monthlyLedger[stmtMonth][0]
+            flow = monthlyLedger[stmtMonth][0]
             balance = monthlyLedger[stmtMonth][1]
-            mospire_writer.writerow([stmtMonth.strftime("%Y-%m"),balance,contribution])
+            mospire_writer.writerow([stmtMonth.strftime("%Y-%m"), balance, flow])
 
     # Store the account data in bogle spreadsheet format
     with open(processed_folder+"/"+accountName+'-bogle.csv', mode='w') as bogle_file:
         bogle_writer = csv.writer(bogle_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         for stmtMonth in monthlyLedger:    
             withdrawal = 0
-            contribution = 0
+            flow = 0
             if monthlyLedger[stmtMonth][0] > 0:
-                contribution = monthlyLedger[stmtMonth][0]
+                flow = monthlyLedger[stmtMonth][0]
             else:
                 withdrawal = abs(monthlyLedger[stmtMonth][0])
             balance = monthlyLedger[stmtMonth][1]
-            bogle_writer.writerow([stmtMonth.strftime("%Y-%m"),balance,contribution,withdrawal])
+            bogle_writer.writerow([stmtMonth.strftime("%Y-%m"), balance, flow, withdrawal])
