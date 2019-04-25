@@ -16,38 +16,34 @@ LedgerEntry = namedtuple('LedgerEntry', ['flow', 'balance'])
 class IRRCalculator():
 
     def __init__(self):
-        self.aggregated_ledgers = {}
+        self.aggregated_ledger = {}
 
-    def addLedger(self, ledger_name, ledger):
-        monthly_summaries = {}
+    def add_account_ledger(self, ledger):
         for entry_date in list(ledger.keys()):
             #TODO use more python fu here, we're just reducing the map to a single summed entry for each month
             stmt_key = datetime.strptime(str(entry_date.year) + "-" + str(entry_date.month), '%Y-%m')
-            if stmt_key in monthly_summaries:
-                monthly_summaries[stmt_key].flow += ledger[entry_date].flow
-                monthly_summaries[stmt_key].balance += ledger[entry_date].balance
+            if stmt_key in self.aggregated_ledger:
+                self.aggregated_ledger[stmt_key]._replace( flow = ledger[entry_date].flow + self.aggregated_ledger[stmt_key].flow )
+                self.aggregated_ledger[stmt_key]._replace( balance = ledger[entry_date].balance + self.aggregated_ledger[stmt_key].balance)
             else:
-                monthly_summaries[stmt_key] = ledger[entry_date]
+                self.aggregated_ledger[stmt_key] = ledger[entry_date]
 
-        self.aggregated_ledgers[ledger_name] = monthly_summaries
+    def get_irr(self, start_month, target_month):
 
-
-    def get_irr(self, ledger_name, start_month, target_month):
-
-        target_ledger = self.aggregated_ledgers[ledger_name]
-
-        if target_ledger is None:
+        if self.aggregated_ledger is None:
             raise ValueError("Ledger named {} not found.".format(ledger_name))
 
-        ledger_range = list(target_ledger.keys())
+        ledger_range = list(self.aggregated_ledger.keys())
         ledger_range.sort()
+
+        if len(ledger_range) < 2:
+            raise ValueError("Ledger must contain at least two month's of entries for an IRR calculation.")
 
         if ledger_range[-1] < target_month:
             raise ValueError("Ledger does not cover targeted month {}".format(target_month))
 
         if ledger_range[0] > start_month:
             raise ValueError("Ledger does not cover start month")
-
 
         growth_10k = [10000]
         one_month_return = []
@@ -68,8 +64,8 @@ class IRRCalculator():
                 continue
 
             prior_key = ledger_range[i - 1]
-            entry = target_ledger[key]
-            prior_entry = target_ledger[prior_key]
+            entry = self.aggregated_ledger[key]
+            prior_entry = self.aggregated_ledger[prior_key]
             open_balance = prior_entry.balance
             close_balance = entry.balance
             flow = entry.flow
@@ -84,7 +80,7 @@ class IRRCalculator():
                 flow_entry = -flow / 2 + close_balance
                 if i + 1 < len(ledger_range):
                     next_key = ledger_range[i + 1]
-                    next_entry = target_ledger[next_key]
+                    next_entry = self.aggregated_ledger[next_key]
                     flow_entry = -(flow / 2 + next_entry.flow / 2)
                 irr_flow.append(flow_entry)
 
@@ -118,6 +114,12 @@ class IRRCalculator():
         return myirr
 
 
+    def get_earliest_statement_month(self):
+        return list(self.aggregated_ledger.keys())[0]
+
+    def get_latest_statement_month(self):
+        return list(self.aggregated_ledger.keys())[-1]
+
 if __name__ == '__main__':
 
     irr_calculator = IRRCalculator()
@@ -136,19 +138,16 @@ if __name__ == '__main__':
 
             # Convert the raw transaction data into monthly summaries of flow and an end of month balance
             ledger_name = broker_name+"-"+account_name
-            irr_calculator.addLedger(ledger_name,ledger)
+            irr_calculator.add_account_ledger(ledger)
 
-            # Target last month
-            today = datetime.today()
-            last_month = today.replace(day=1) - timedelta(days=1)
-            target_month = last_month.replace(day=1)
-            # override the above with an target in range
-            target_month = list(ledger.keys())[-1]
 
-            # Start at the beginning
-            start_month = list(ledger.keys())[0]
+    # Target last month
+    target_month = irr_calculator.get_latest_statement_month()
 
-            irr_calculator.get_irr(ledger_name,start_month,target_month)
+    # Start at the beginning
+    start_month = irr_calculator.get_earliest_statement_month()
+
+    irr_calculator.get_irr(start_month,target_month)
 
 
 
