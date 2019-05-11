@@ -3,7 +3,6 @@ from collections import namedtuple
 from datetime import datetime, timedelta
 import numpy as np
 
-# pull these sensitive parameters from the environment vars
 processed_folder = './data/processed'
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -23,8 +22,9 @@ class IRRCalculator():
             #TODO use more python fu here, we're just reducing the map to a single summed entry for each month
             stmt_key = datetime.strptime(str(entry_date.year) + "-" + str(entry_date.month), '%Y-%m')
             if stmt_key in self.aggregated_ledger:
-                self.aggregated_ledger[stmt_key]._replace( flow = ledger[entry_date].flow + self.aggregated_ledger[stmt_key].flow )
-                self.aggregated_ledger[stmt_key]._replace( balance = ledger[entry_date].balance + self.aggregated_ledger[stmt_key].balance)
+                combined_flow = ledger[entry_date].flow + self.aggregated_ledger[stmt_key].flow
+                combined_balance= ledger[entry_date].balance + self.aggregated_ledger[stmt_key].balance
+                self.aggregated_ledger[stmt_key] = LedgerEntry(balance=combined_balance, flow=combined_flow)
             else:
                 self.aggregated_ledger[stmt_key] = ledger[entry_date]
 
@@ -56,32 +56,35 @@ class IRRCalculator():
         ten_year_return = []
         irr_flow = []
 
-        for i in range(len(ledger_range)):
-            key = ledger_range[i]
+        for i in range(len(ledger_range) - 1):
+            key = ledger_range[i + 1]
 
             # Only report on keys that fall within our StartDate and TargetMonth window
             if key < start_month or key > target_month:
                 continue
 
-            prior_key = ledger_range[i - 1]
+            prior_key = ledger_range[i]
             entry = self.aggregated_ledger[key]
             prior_entry = self.aggregated_ledger[prior_key]
             open_balance = prior_entry.balance
             close_balance = entry.balance
+            # print("Aggregated close balance for {} was {}".format(key,close_balance))
             flow = entry.flow
             month_return = 0
-            if open_balance + flow > 0:
+            if (open_balance + flow)/2 != 0:
                 month_return = (close_balance - flow / 2) / (open_balance + flow / 2) - 1
-            growth_10k.append(growth_10k[len(growth_10k) - 1] * (1 + month_return))
+            growth_10k.append( growth_10k[len(growth_10k) - 1] * (1 + month_return))
             one_month_return.append(month_return)
             if i == 1:
                 irr_flow.append(-(open_balance + flow / 2))
             else:
-                flow_entry = -flow / 2 + close_balance
-                if i + 1 < len(ledger_range):
-                    next_key = ledger_range[i + 1]
+                # Need special handling for the last loop iteration
+                if i + 2 < len(ledger_range):
+                    next_key = ledger_range[i + 2]
                     next_entry = self.aggregated_ledger[next_key]
                     flow_entry = -(flow / 2 + next_entry.flow / 2)
+                else:
+                    flow_entry = -flow / 2 + close_balance
                 irr_flow.append(flow_entry)
 
             if i > 2:
@@ -115,10 +118,16 @@ class IRRCalculator():
 
 
     def get_earliest_statement_month(self):
-        return list(self.aggregated_ledger.keys())[0]
+        stmts = list(self.aggregated_ledger.keys())
+        if len(stmts) < 1:
+            raise ValueError("No account statement data is present in the ledger")
+        return stmts[0]
 
     def get_latest_statement_month(self):
-        return list(self.aggregated_ledger.keys())[-1]
+        stmts = list(self.aggregated_ledger.keys())
+        if len(stmts) < 1:
+            raise ValueError("No account statement data is present in the ledger")
+        return stmts[-1]
 
 if __name__ == '__main__':
 
@@ -126,6 +135,7 @@ if __name__ == '__main__':
     # Read all mospire CSVs in the processed folder
     for broker in glob.glob(processed_folder+'/*'):
         for filename in glob.glob(broker+'/*-mospire.csv'):
+            print("Reading account data from {}".format(filename))
             tokens = re.split('/|\.',filename)
             broker_name = tokens[4]
             account_name = tokens[5]
@@ -137,17 +147,15 @@ if __name__ == '__main__':
                     ledger[stmt_date] = LedgerEntry(balance=float(row[1]), flow=float(row[2]))
 
             # Convert the raw transaction data into monthly summaries of flow and an end of month balance
-            ledger_name = broker_name+"-"+account_name
             irr_calculator.add_account_ledger(ledger)
-
-
-    # Target last month
-    target_month = irr_calculator.get_latest_statement_month()
 
     # Start at the beginning
     start_month = irr_calculator.get_earliest_statement_month()
 
-    irr_calculator.get_irr(start_month,target_month)
+    # Target last month
+    target_month = irr_calculator.get_latest_statement_month()
+
+    print("\nThe internal rate of return from {:%Y-%m} to {:%Y-%m} of all accounts was {:.3%}".format(start_month,target_month,irr_calculator.get_irr(start_month,target_month)))
 
 
 

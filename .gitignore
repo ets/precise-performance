@@ -8,3 +8,4 @@ pyvenv.cfg
 /lib
 .cache
 .idea/workspace.xml
+~$*
