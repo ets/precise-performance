@@ -9,10 +9,11 @@ pp = pprint.PrettyPrinter(indent=4)
 LedgerEntry = namedtuple('LedgerEntry', ['flow', 'balance'])
 PerformanceResults = namedtuple('PerformanceResults', ['start', 'end', 'irr','one_month','three_month','six_month','ytd','one_year','three_year','five_year','ten_year'])
 
-#
-# Utility class for calculating IRR.
-# Supports a set of named transaction ledgers
-#
+"""
+Utility class for calculating ledger performance
+        
+"""
+
 class PerformanceCalculator():
 
     def __init__(self):
