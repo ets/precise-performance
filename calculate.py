@@ -20,6 +20,9 @@ class PerformanceCalculator():
         self.aggregated_ledger = {}
 
     def add_account_ledger(self, ledger):
+
+
+    def add_account_ledger(self, ledger):
         for entry_date in list(ledger.keys()):
             #TODO use more python fu here, we're just reducing the map to a single summed entry for each month
             stmt_key = datetime.strptime(str(entry_date.year) + "-" + str(entry_date.month), '%Y-%m')
