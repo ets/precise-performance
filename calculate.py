@@ -19,24 +19,20 @@ class PerformanceCalculator():
     def __init__(self):
         self.aggregated_ledger = {}
 
-    def add_account_ledger(self, ledger):
-
+    def add_account_ledger_entry(self, entry_date, flow, balance):
+        stmt_key = datetime.strptime(str(entry_date.year) + "-" + str(entry_date.month), '%Y-%m')
+        if stmt_key in self.aggregated_ledger:
+            combined_flow = flow + self.aggregated_ledger[stmt_key].flow
+            combined_balance = balance + self.aggregated_ledger[stmt_key].balance
+            self.aggregated_ledger[stmt_key] = LedgerEntry(balance=combined_balance, flow=combined_flow)
+        else:
+            self.aggregated_ledger[stmt_key] = LedgerEntry(balance=balance, flow=flow)
 
     def add_account_ledger(self, ledger):
         for entry_date in list(ledger.keys()):
-            #TODO use more python fu here, we're just reducing the map to a single summed entry for each month
-            stmt_key = datetime.strptime(str(entry_date.year) + "-" + str(entry_date.month), '%Y-%m')
-            if stmt_key in self.aggregated_ledger:
-                combined_flow = ledger[entry_date].flow + self.aggregated_ledger[stmt_key].flow
-                combined_balance= ledger[entry_date].balance + self.aggregated_ledger[stmt_key].balance
-                self.aggregated_ledger[stmt_key] = LedgerEntry(balance=combined_balance, flow=combined_flow)
-            else:
-                self.aggregated_ledger[stmt_key] = ledger[entry_date]
+            self.add_account_ledger_entry(entry_date,ledger[entry_date].flow,ledger[entry_date].balance)
 
     def get_performance_results(self, start_month, target_month):
-
-        if self.aggregated_ledger is None:
-            raise ValueError("Ledger named {} not found.".format(ledger_name))
 
         ledger_range = list(self.aggregated_ledger.keys())
         ledger_range.sort()
@@ -47,8 +43,6 @@ class PerformanceCalculator():
         if ledger_range[-1] < target_month:
             raise ValueError("Ledger does not cover targeted month {}".format(target_month))
 
-        if ledger_range[0] > start_month:
-            raise ValueError("Ledger does not cover start month")
 
         growth_10k = [10000]
         one_month_return = []
@@ -128,12 +122,14 @@ class PerformanceCalculator():
 
     def get_earliest_statement_month(self):
         stmts = list(self.aggregated_ledger.keys())
+        stmts.sort()
         if len(stmts) < 1:
             raise ValueError("No account statement data is present in the ledger")
         return stmts[0]
 
     def get_latest_statement_month(self):
         stmts = list(self.aggregated_ledger.keys())
+        stmts.sort()
         if len(stmts) < 1:
             raise ValueError("No account statement data is present in the ledger")
         return stmts[-1]
@@ -174,4 +170,5 @@ if __name__ == '__main__':
     if performance_results.three_year:  print("3y is {0:.3%}".format(performance_results.three_year))
     if performance_results.five_year:  print("5y is {0:.3%}".format(performance_results.five_year))
     if performance_results.ten_year:  print("10y is {0:.3%}".format(performance_results.ten_year))
+
 
