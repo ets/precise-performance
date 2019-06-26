@@ -36,12 +36,13 @@ class PerformanceCalculator():
 
         ledger_range = list(self.aggregated_ledger.keys())
         ledger_range.sort()
+        target_range = [i for i in ledger_range if i >= start_month and i <= target_month]
 
-        if len(ledger_range) < 2:
-            raise ValueError("Ledger must contain at least two month's of entries for an IRR calculation.")
+        if len(target_range) < 2:
+            raise ValueError("Targeted range must contain at least two month's of entries for an IRR calculation.")
 
-        if ledger_range[-1] < target_month:
-            raise ValueError("Ledger does not cover targeted month {}".format(target_month))
+        if target_range[-1] < target_month:
+            raise ValueError("Targeted range does not cover targeted month {}".format(target_month))
 
 
         growth_10k = [10000]
@@ -55,14 +56,14 @@ class PerformanceCalculator():
         ten_year_return = []
         irr_flow = []
 
-        for i in range(len(ledger_range) - 1):
-            key = ledger_range[i + 1]
+        for i in range(len(target_range) - 1):
+            key = target_range[i + 1]
 
             # Only report on keys that fall within our StartDate and TargetMonth window
             if key < start_month or key > target_month:
                 continue
 
-            prior_key = ledger_range[i]
+            prior_key = target_range[i]
             entry = self.aggregated_ledger[key]
             prior_entry = self.aggregated_ledger[prior_key]
             open_balance = prior_entry.balance
@@ -78,8 +79,8 @@ class PerformanceCalculator():
                 irr_flow.append(-(open_balance + flow / 2))
             else:
                 # Need special handling for the last loop iteration
-                if i + 2 < len(ledger_range):
-                    next_key = ledger_range[i + 2]
+                if i + 2 < len(target_range):
+                    next_key = target_range[i + 2]
                     next_entry = self.aggregated_ledger[next_key]
                     flow_entry = -(flow / 2 + next_entry.flow / 2)
                 else:
@@ -106,7 +107,7 @@ class PerformanceCalculator():
                 ten_year_return.append((growth_10k[-1] / growth_10k[-121]) ** (1 / 10) - 1)
 
 
-        myirr = (1 + np.irr(irr_flow)) ** min(12, len(ledger_range)) - 1
+        myirr = (1 + np.irr(irr_flow)) ** min(12, len(target_range)) - 1
 
 
         return PerformanceResults(start=start_month,end=target_month,irr=myirr,

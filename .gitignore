@@ -9,3 +9,5 @@ pyvenv.cfg
 .cache
 .idea/workspace.xml
 ~$*
+**/.DS_Store
+**/__pycache__
