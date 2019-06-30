@@ -56,36 +56,37 @@ class PerformanceCalculator():
         ten_year_return = []
         irr_flow = []
 
-        for i in range(len(target_range) - 1):
-            key = target_range[i + 1]
-
-            # Only report on keys that fall within our StartDate and TargetMonth window
-            if key < start_month or key > target_month:
-                continue
-
-            prior_key = target_range[i]
+        for i in range(len(target_range)):
+            key = target_range[i]
             entry = self.aggregated_ledger[key]
-            prior_entry = self.aggregated_ledger[prior_key]
-            open_balance = prior_entry.balance
             close_balance = entry.balance
-            # print("Aggregated close balance for {} was {}".format(key,close_balance))
             flow = entry.flow
+
+            if i > 0:
+                prior_key = target_range[i - 1]
+                prior_entry = self.aggregated_ledger[prior_key]
+                open_balance = prior_entry.balance
+            else: # for first entry in ledger, infer the open balance
+                open_balance = close_balance - flow
+                # priming entry into IRR Flow is uniquely calculated
+                irr_flow.append(-(open_balance + flow / 2))
+
+            # IRR Flow calculation needs special handling for the last loop iteration
+            if i + 1 < len(target_range):
+                next_key = target_range[i + 1]
+                next_entry = self.aggregated_ledger[next_key]
+                flow_entry = -(flow / 2 + next_entry.flow / 2)
+            else:
+                flow_entry = -flow / 2 + close_balance
+            irr_flow.append(flow_entry)
+
+            # print("Aggregated close balance for {} was {}".format(key,close_balance))
+
             month_return = 0
             if (open_balance + flow)/2 != 0:
                 month_return = (close_balance - flow / 2) / (open_balance + flow / 2) - 1
             growth_10k.append( growth_10k[len(growth_10k) - 1] * (1 + month_return))
             one_month_return.append(month_return)
-            if i == 1:
-                irr_flow.append(-(open_balance + flow / 2))
-            else:
-                # Need special handling for the last loop iteration
-                if i + 2 < len(target_range):
-                    next_key = target_range[i + 2]
-                    next_entry = self.aggregated_ledger[next_key]
-                    flow_entry = -(flow / 2 + next_entry.flow / 2)
-                else:
-                    flow_entry = -flow / 2 + close_balance
-                irr_flow.append(flow_entry)
 
             if i > 2:
                 three_month_return.append(growth_10k[-1] / growth_10k[-4] - 1)
@@ -98,7 +99,7 @@ class PerformanceCalculator():
                 if growth_10k[mth_offset] != 0:
                     ytd = growth_10k[-1] / growth_10k[mth_offset] - 1
                 ytd_return.append(ytd)
-            # TODO this YTD calculation is suspect...
+            # TODO this YTD calculation is wrong...
             if i > 35:
                 three_year_return.append((growth_10k[-1] / growth_10k[-37]) ** (1 / 3) - 1)
             if i > 59:
@@ -140,7 +141,7 @@ if __name__ == '__main__':
     performance_calculator = PerformanceCalculator()
     # Read all mospire CSVs in the processed folder
     for broker in glob.glob(processed_folder+'/*'):
-        for filename in glob.glob(broker+'/*-mospire.csv'):
+        for filename in glob.glob(broker+'/*162492078-mospire.csv'):
             print("Reading account data from {}".format(filename))
             tokens = re.split('/|\.',filename)
             broker_name = tokens[4]
