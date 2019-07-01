@@ -94,12 +94,6 @@ class PerformanceCalculator():
                 six_month_return.append(growth_10k[-1] / growth_10k[-7] - 1)
             if i > 11:
                 one_year_return.append(growth_10k[-1] / growth_10k[-13] - 1)
-                ytd = 0
-                mth_offset = i + 1 - key.month
-                if growth_10k[mth_offset] != 0:
-                    ytd = growth_10k[-1] / growth_10k[mth_offset] - 1
-                ytd_return.append(ytd)
-            # TODO this YTD calculation is wrong...
             if i > 35:
                 three_year_return.append((growth_10k[-1] / growth_10k[-37]) ** (1 / 3) - 1)
             if i > 59:
@@ -107,6 +101,10 @@ class PerformanceCalculator():
             if i > 119:
                 ten_year_return.append((growth_10k[-1] / growth_10k[-121]) ** (1 / 10) - 1)
 
+            ytd = 0
+            if len(growth_10k) > key.month:
+                ytd = (growth_10k[-1] / growth_10k[ -key.month-1 ]) - 1
+            ytd_return.append(ytd)
 
         myirr = (1 + np.irr(irr_flow)) ** min(12, len(target_range)) - 1
 
