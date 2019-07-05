@@ -139,7 +139,7 @@ if __name__ == '__main__':
     performance_calculator = PerformanceCalculator()
     # Read all mospire CSVs in the processed folder
     for broker in glob.glob(processed_folder+'/*'):
-        for filename in glob.glob(broker+'/*162492078-mospire.csv'):
+        for filename in glob.glob(broker+'/*-mospire.csv'):
             print("Reading account data from {}".format(filename))
             tokens = re.split('/|\.',filename)
             broker_name = tokens[4]
