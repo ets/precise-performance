@@ -1,6 +1,6 @@
 import glob, pprint, csv, re
 from collections import namedtuple
-from datetime import datetime, timedelta
+from datetime import datetime
 import numpy as np
 
 processed_folder = './data/processed'
@@ -20,7 +20,7 @@ class PerformanceCalculator():
         self.aggregated_ledger = {}
 
     def add_account_ledger_entry(self, entry_date, flow, balance):
-        stmt_key = datetime.strptime(str(entry_date.year) + "-" + str(entry_date.month), '%Y-%m')
+        stmt_key = datetime.strptime(str(entry_date.year) + "-" + str(entry_date.month), '%Y-%m').date()
         if stmt_key in self.aggregated_ledger:
             combined_flow = flow + self.aggregated_ledger[stmt_key].flow
             combined_balance = balance + self.aggregated_ledger[stmt_key].balance
@@ -148,7 +148,7 @@ if __name__ == '__main__':
             with open(filename, mode='r') as mospire_file:
                 csv_reader = csv.reader(mospire_file, delimiter=',')
                 for row in csv_reader:
-                    stmt_date = datetime.strptime(row[0], '%Y-%m')
+                    stmt_date = datetime.strptime(row[0], '%Y-%m').date()
                     ledger[stmt_date] = LedgerEntry(balance=float(row[1]), flow=float(row[2]))
 
             # Convert the raw transaction data into monthly summaries of flow and an end of month balance
