@@ -7,7 +7,6 @@ processed_folder = './data/processed'
 pp = pprint.PrettyPrinter(indent=4)
 
 LedgerEntry = namedtuple('LedgerEntry', ['flow', 'balance'])
-PerformanceResults = namedtuple('PerformanceResults', ['start', 'end', 'irr','one_month','three_month','six_month','ytd','one_year','three_year','five_year','ten_year'])
 
 """
 Utility class for calculating ledger performance
@@ -32,7 +31,7 @@ class PerformanceCalculator():
         for entry_date in list(ledger.keys()):
             self.add_account_ledger_entry(entry_date,ledger[entry_date].flow,ledger[entry_date].balance)
 
-    def get_performance_results(self, start_month, target_month):
+    def get_performance_results(self, start_month, target_month, ):
 
         ledger_range = list(self.aggregated_ledger.keys())
         ledger_range.sort()
@@ -47,7 +46,10 @@ class PerformanceCalculator():
 
         growth_10k = [10000]
         one_month_return = []
+        two_month_return = []
         three_month_return = []
+        four_month_return = []
+        five_month_return = []
         six_month_return = []
         ytd_return = []
         one_year_return = []
@@ -87,9 +89,14 @@ class PerformanceCalculator():
                 month_return = (close_balance - flow / 2) / (open_balance + flow / 2) - 1
             growth_10k.append( growth_10k[len(growth_10k) - 1] * (1 + month_return))
             one_month_return.append(month_return)
-
+            if i > 1:
+                two_month_return.append(growth_10k[-1] / growth_10k[-4] - 1)
             if i > 2:
                 three_month_return.append(growth_10k[-1] / growth_10k[-4] - 1)
+            if i > 3:
+                four_month_return.append(growth_10k[-1] / growth_10k[-4] - 1)
+            if i > 4:
+                five_month_return.append(growth_10k[-1] / growth_10k[-4] - 1)
             if i > 5:
                 six_month_return.append(growth_10k[-1] / growth_10k[-7] - 1)
             if i > 11:
@@ -109,15 +116,18 @@ class PerformanceCalculator():
         myirr = (1 + np.irr(irr_flow)) ** min(12, len(target_range)) - 1
 
 
-        return PerformanceResults(start=start_month,end=target_month,irr=myirr,
-                                  ytd=ytd_return[-1] if len(ytd_return) > 0 else None,
-                                  one_month=one_month_return[-1] if len(one_month_return) > 0 else None,
-                                  three_month=three_month_return[-1] if len(three_month_return) > 0 else None,
-                                  six_month=six_month_return[-1] if len(six_month_return) > 0 else None,
-                                  one_year=one_year_return[-1] if len(one_year_return) > 0 else None,
-                                  three_year=three_year_return[-1] if len(three_year_return) > 0 else None,
-                                  five_year=five_year_return[-1] if len(five_year_return) > 0 else None,
-                                  ten_year=ten_year_return[-1] if len(ten_year_return) > 0 else None)
+        return { "start":start_month, "end":target_month, "irr":myirr
+                  , "ytd":ytd_return[-1] if len(ytd_return) > 0 else None
+                  , "one_month":one_month_return[-1] if len(one_month_return) > 0 else None
+                  , "two_month":two_month_return[-1] if len(two_month_return) > 0 else None
+                  , "three_month":three_month_return[-1] if len(three_month_return) > 0 else None
+                  , "four_month":four_month_return[-1] if len(four_month_return) > 0 else None
+                  , "five_month":five_month_return[-1] if len(five_month_return) > 0 else None
+                  , "six_month":six_month_return[-1] if len(six_month_return) > 0 else None
+                  , "one_year":one_year_return[-1] if len(one_year_return) > 0 else None
+                  , "three_year":three_year_return[-1] if len(three_year_return) > 0 else None
+                  , "five_year":five_year_return[-1] if len(five_year_return) > 0 else None
+                  , "ten_year":ten_year_return[-1] if len(ten_year_return) > 0 else None}
 
 
     def get_earliest_statement_month(self):
@@ -161,14 +171,14 @@ if __name__ == '__main__':
     target_month = performance_calculator.get_latest_statement_month()
 
     performance_results = performance_calculator.get_performance_results(start_month, target_month)
-    print("\nThe internal rate of return from {:%Y-%m} to {:%Y-%m} of all accounts was {:.3%}".format(start_month, target_month, performance_results.irr))
-    if performance_results.one_month:  print("1mth is {0:.3%}".format(performance_results.one_month))
-    if performance_results.three_month:  print("3mth is {0:.3%}".format(performance_results.three_month))
-    if performance_results.six_month:  print("6mth is {0:.3%}".format(performance_results.six_month))
-    if performance_results.ytd:  print("YTD is {0:.3%}".format(performance_results.ytd))
-    if performance_results.one_year:  print("1y is {0:.3%}".format(performance_results.one_year))
-    if performance_results.three_year:  print("3y is {0:.3%}".format(performance_results.three_year))
-    if performance_results.five_year:  print("5y is {0:.3%}".format(performance_results.five_year))
-    if performance_results.ten_year:  print("10y is {0:.3%}".format(performance_results.ten_year))
+    print("\nThe internal rate of return from {:%Y-%m} to {:%Y-%m} of all accounts was {:.3%}".format(start_month, target_month, performance_results["irr"]))
+    if performance_results["one_month"]:  print("1mth is {0:.3%}".format(performance_results["one_month"]))
+    if performance_results["three_month"]:  print("3mth is {0:.3%}".format(performance_results["three_month"]))
+    if performance_results["six_month"]:  print("6mth is {0:.3%}".format(performance_results["six_month"]))
+    if performance_results["ytd"]:  print("YTD is {0:.3%}".format(performance_results["ytd"]))
+    if performance_results["one_year"]:  print("1y is {0:.3%}".format(performance_results["one_year"]))
+    if performance_results["three_year"]:  print("3y is {0:.3%}".format(performance_results["three_year"]))
+    if performance_results["five_year"]:  print("5y is {0:.3%}".format(performance_results["five_year"]))
+    if performance_results["ten_year"]:  print("10y is {0:.3%}".format(performance_results["ten_year"]))
 
 
