@@ -116,7 +116,7 @@ class PerformanceCalculator():
         myirr = (1 + np.irr(irr_flow)) ** min(12, len(target_range)) - 1
 
 
-        return { "start":start_month, "end":target_month, "irr":myirr
+        return { "start":start_month.strftime("%Y-%m"), "end":target_month.strftime("%Y-%m"), "irr":myirr
                   , "ytd":ytd_return[-1] if len(ytd_return) > 0 else None
                   , "one_month":one_month_return[-1] if len(one_month_return) > 0 else None
                   , "two_month":two_month_return[-1] if len(two_month_return) > 0 else None
