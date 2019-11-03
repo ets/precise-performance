@@ -68,7 +68,7 @@ for account in accounts:
         for stmtMonth in statementMonths:
             flow = accounts[account][stmtMonth][0]
             balance = accounts[account][stmtMonth][1]
-            mospire_writer.writerow([stmtMonth.strftime("%Y-%m"), balance, flow])
+            mospire_writer.writerow([stmtMonth.strftime("%Y-%m"), flow, balance])
 
     # Store the account data in bogle spreadsheet format
     with open(processed_folder+"/"+account+'-bogle.csv', mode='w') as bogle_file:
