@@ -31,7 +31,13 @@ class PerformanceCalculator():
         for entry_date in list(ledger.keys()):
             self.add_account_ledger_entry(entry_date,ledger[entry_date].flow,ledger[entry_date].balance)
 
-    def get_performance_results(self, start_month, target_month, ):
+    def get_performance_results(self, start_month=None, target_month=None):
+
+        if start_month is None:
+            start_month = self.get_earliest_statement_month()
+
+        if target_month is None:
+            target_month = self.get_latest_statement_month()
 
         ledger_range = list(self.aggregated_ledger.keys())
         ledger_range.sort()
@@ -164,14 +170,8 @@ if __name__ == '__main__':
             # Convert the raw transaction data into monthly summaries of flow and an end of month balance
             performance_calculator.add_account_ledger(ledger)
 
-    # Start at the beginning
-    start_month = performance_calculator.get_earliest_statement_month()
-
-    # Target last month
-    target_month = performance_calculator.get_latest_statement_month()
-
-    performance_results = performance_calculator.get_performance_results(start_month, target_month)
-    print("\nThe internal rate of return from {:%Y-%m} to {:%Y-%m} of all accounts was {:.3%}".format(start_month, target_month, performance_results["irr"]))
+    performance_results = performance_calculator.get_performance_results()
+    print("\nThe internal rate of return from {:%Y-%m} to {:%Y-%m} of all accounts was {:.3%}".format(performance_results["start"], performance_results["end"], performance_results["irr"]))
     if performance_results["one_month"]:  print("1mth is {0:.3%}".format(performance_results["one_month"]))
     if performance_results["three_month"]:  print("3mth is {0:.3%}".format(performance_results["three_month"]))
     if performance_results["six_month"]:  print("6mth is {0:.3%}".format(performance_results["six_month"]))
