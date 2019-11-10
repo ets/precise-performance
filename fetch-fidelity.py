@@ -23,7 +23,8 @@ loginLinks = soup.find_all('a',href=True, text='Log In')
 loginUrl = loginLinks[0]['href']
 loginPage = s.get(loginUrl)
 soup = BeautifulSoup(loginPage.text, 'html.parser')
-loginForms = soup.find_all('form',attrs={'id':'Login'})    
+print(soup)
+loginForms = soup.find_all('form',attrs={'id':'Login'})
 data = {"SSN":fi_username, "PIN":fi_password}
 authUrl = urljoin(loginUrl,loginForms[0].get('action'))
 r = s.post(authUrl, data=data)
@@ -58,8 +59,10 @@ if r.status_code == 200:
                         # This is a row with a CSV download      
                         statementDate = urlParams['c'][0]                        
                         csvFilename = raw_folder + datetime.strptime(statementDate, '%m/%d/%Y').strftime("%y%m%d") + '.csv'
-                        if os.path.isfile(csvFilename):
-                            csvFilename = csvFilename[:-4] + '.+' + csvFilename[-4:]
+                        uniq = 1
+                        while os.path.isfile(csvFilename):
+                            csvFilename = csvFilename[:-4] + '.'+uniq+'.' + csvFilename[-4:]
+                            uniq = uniq + 1
                         csvResponse = s.get(fi_statements_url+links[-1]['href'])                        
                         with open(csvFilename, 'w') as f:
                             f.write(csvResponse.text)
