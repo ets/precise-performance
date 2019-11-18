@@ -47,11 +47,12 @@ class PerformanceCalculator():
             raise ValueError("Targeted range must contain at least two month's of entries for an IRR calculation.")
 
         if target_range[-1] < target_month:
-            raise ValueError("Targeted range does not cover targeted month {}".format(target_month))
+            raise ValueError("Requested range does not include an entry for the targeted month {}".format(target_month))
 
         growth_10k = [10000]
         monthly_performance = []
         irr_flow = []
+        twr_flow = 1
         ytd_return = None
 
         for i in range(len(target_range)):
@@ -70,6 +71,10 @@ class PerformanceCalculator():
                 # priming entry into IRR Flow is uniquely calculated
                 irr_flow.append(-(open_balance + flow / 2))
 
+            subperiod_return = (close_balance / (open_balance + flow)) - 1
+            twr_flow = twr_flow * (1+subperiod_return)
+
+
             # IRR Flow calculation needs special handling for the last loop iteration
             if i + 1 < len(target_range):
                 next_key = target_range[i + 1]
@@ -78,6 +83,7 @@ class PerformanceCalculator():
             else:
                 flow_entry = -flow / 2 + close_balance
             irr_flow.append(flow_entry)
+
 
             # print("Aggregated close balance for {} was {}".format(key,close_balance))
 
@@ -95,8 +101,9 @@ class PerformanceCalculator():
             ytd_return = (growth_10k[-1] / growth_10k[-key.month - 1]) - 1
 
         myirr = (1 + np.irr(irr_flow)) ** min(12, len(target_range)) - 1
+        mytwr = (twr_flow - 1)
 
-        return { "start":start_month.strftime("%Y-%m"), "end":target_month.strftime("%Y-%m"), "irr":myirr, "ytd":ytd_return, "monthly_performance":monthly_performance}
+        return { "start":start_month.strftime("%Y-%m"), "end":target_month.strftime("%Y-%m"), "irr":myirr, "twr":mytwr, "ytd":ytd_return, "monthly_performance":monthly_performance}
 
 
     def get_earliest_statement_month(self):
@@ -138,7 +145,4 @@ if __name__ == '__main__':
     if performance_results["ytd"]:  print("YTD is {0:.3%}".format(performance_results["ytd"]))
     for mth_idx in range(1,len(performance_results["monthly_performance"])):
         print("{0}th is {1:.3%}".format(mth_idx,performance_results["monthly_performance"][mth_idx]))
-
-
-
 
