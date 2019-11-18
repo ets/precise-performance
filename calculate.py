@@ -71,8 +71,16 @@ class PerformanceCalculator():
                 # priming entry into IRR Flow is uniquely calculated
                 irr_flow.append(-(open_balance + flow / 2))
 
-            subperiod_return = (close_balance / (open_balance + flow)) - 1
-            twr_flow = twr_flow * (1+subperiod_return)
+            if (open_balance + flow) != 0:
+                # https://www.oldschoolvalue.com/tutorial/time-weighted-return-portfolio-performance/
+                # subperiod_return = ( (close_balance) / (open_balance + flow)) - 1
+                
+                # https://www.canadianportfoliomanagerblog.com/how-to-calculate-your-time-weighted-rate-of-return-twrr/
+                v1 = close_balance
+                v0 = open_balance + flow
+                subperiod_return = (v1-v0) / v0
+
+                twr_flow = twr_flow * (1+subperiod_return)
 
 
             # IRR Flow calculation needs special handling for the last loop iteration
@@ -91,7 +99,6 @@ class PerformanceCalculator():
             if (open_balance + flow)/2 != 0:
                 month_return = (close_balance - flow / 2) / (open_balance + flow / 2) - 1
             growth_10k.append( growth_10k[len(growth_10k) - 1] * (1 + month_return))
-
 
         for mth in range(len(target_range)):
             monthly_performance.append( (growth_10k[-1] / growth_10k[-(mth+1)]) ** (1 / (int((mth-1)/12)+1) ) - 1)
@@ -142,6 +149,7 @@ if __name__ == '__main__':
 
     performance_results = performance_calculator.get_performance_results()
     print("\nThe internal rate of return from {} to {} of all accounts was {:.3%}".format(performance_results["start"], performance_results["end"], performance_results["irr"]))
+    print("The total weighted return was {:.3%}".format(performance_results["twr"]))
     if performance_results["ytd"]:  print("YTD is {0:.3%}".format(performance_results["ytd"]))
     for mth_idx in range(1,len(performance_results["monthly_performance"])):
         print("{0}th is {1:.3%}".format(mth_idx,performance_results["monthly_performance"][mth_idx]))
