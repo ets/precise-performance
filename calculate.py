@@ -72,9 +72,6 @@ class PerformanceCalculator():
                 irr_flow.append(-(open_balance + flow / 2))
 
             if (open_balance + flow) != 0:
-                # https://www.oldschoolvalue.com/tutorial/time-weighted-return-portfolio-performance/
-                # subperiod_return = ( (close_balance) / (open_balance + flow)) - 1
-                
                 # https://www.canadianportfoliomanagerblog.com/how-to-calculate-your-time-weighted-rate-of-return-twrr/
                 v1 = close_balance
                 v0 = open_balance + flow
@@ -108,7 +105,7 @@ class PerformanceCalculator():
             ytd_return = (growth_10k[-1] / growth_10k[-key.month - 1]) - 1
 
         myirr = (1 + np.irr(irr_flow)) ** min(12, len(target_range)) - 1
-        mytwr = (twr_flow - 1)
+        mytwr = (1 + (twr_flow - 1)) ** (12/len(target_range)) - 1
 
         return { "start":start_month.strftime("%Y-%m"), "end":target_month.strftime("%Y-%m"), "irr":myirr, "twr":mytwr, "ytd":ytd_return, "monthly_performance":monthly_performance}
 
@@ -132,7 +129,7 @@ if __name__ == '__main__':
     performance_calculator = PerformanceCalculator()
     # Read all mospire CSVs in the processed folder
     for broker in glob.glob(processed_folder+'/*'):
-        for filename in glob.glob(broker+'/*Traditional IRA-mospire.csv'):
+        for filename in glob.glob(broker+'/*-mospire.csv'):
             print("Reading account data from {}".format(filename))
             tokens = re.split('/|\.',filename)
             broker_name = tokens[4]
@@ -149,7 +146,7 @@ if __name__ == '__main__':
 
     performance_results = performance_calculator.get_performance_results()
     print("\nThe internal rate of return from {} to {} of all accounts was {:.3%}".format(performance_results["start"], performance_results["end"], performance_results["irr"]))
-    print("The total weighted return was {:.3%}".format(performance_results["twr"]))
+    print("The annualized time weighted return was {:.3%}".format(performance_results["twr"]))
     if performance_results["ytd"]:  print("YTD is {0:.3%}".format(performance_results["ytd"]))
     for mth_idx in range(1,len(performance_results["monthly_performance"])):
         print("{0}th is {1:.3%}".format(mth_idx,performance_results["monthly_performance"][mth_idx]))
