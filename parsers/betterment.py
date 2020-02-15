@@ -3,8 +3,8 @@ from datetime import datetime
 
 
 # pull these sensitive parameters from the environment vars
-raw_folder = './data/raw/betterment'
-processed_folder = './data/processed/betterment'
+raw_folder = '../data/raw/betterment'
+processed_folder = '../data/processed/betterment'
 accounts = {}
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -77,7 +77,7 @@ for accountName in accounts:
         for stmtMonth in monthlyLedger:
             flow = monthlyLedger[stmtMonth][0]
             balance = monthlyLedger[stmtMonth][1]
-            mospire_writer.writerow([stmtMonth.strftime("%Y-%m"), flow, balance])
+            mospire_writer.writerow([stmtMonth.strftime("%Y-%m-%d"), flow, balance])
 
     # Store the account data in bogle spreadsheet format
     with open(processed_folder+"/"+accountName+'-bogle.csv', mode='w') as bogle_file:
